@@ -10,10 +10,12 @@ struct bme68x_conf conf;
 struct bme68x_heatr_conf heatr_conf;
 struct bme68x_data data[3];
 
-BME68X_INTF_RET_TYPE i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
-{
-    uint8_t device_addr = *(uint8_t*)intf_ptr;
-    Wire.beginTransmission(device_addr);
+const uint8_t DEVICE_ADDRESS = BME68X_I2C_ADDR_HIGH;
+
+BME68X_INTF_RET_TYPE i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr) {
+    Serial.printf("I2C Read: Starting read from device register 0x%02X, length %d\n", reg_addr, len);
+
+    Wire.beginTransmission(DEVICE_ADDRESS);
     Wire.write(reg_addr);
     int endResult = Wire.endTransmission(false);
     if (endResult != 0) {
@@ -21,7 +23,7 @@ BME68X_INTF_RET_TYPE i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len,
       return 1;
     }
 
-    uint32_t received = Wire.requestFrom((int)device_addr, (uint8_t)len);
+    uint32_t received = Wire.requestFrom(DEVICE_ADDRESS, (uint8_t)len);
     if (received != len) {
       Serial.printf("I2C Read Error: Requested %d bytes, but received %d\n", len, received);
       return 1;
@@ -38,10 +40,8 @@ BME68X_INTF_RET_TYPE i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len,
     return 0;
 }
 
-BME68X_INTF_RET_TYPE i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
-{
-    uint8_t device_addr = *(uint8_t*)intf_ptr;
-    Wire.beginTransmission(device_addr);
+BME68X_INTF_RET_TYPE i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr) {
+    Wire.beginTransmission(DEVICE_ADDRESS);
     Wire.write(reg_addr);
     for (uint32_t i = 0; i < len; i++) {
         Wire.write(reg_data[i]);
@@ -53,8 +53,7 @@ BME68X_INTF_RET_TYPE i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32
     return 0;
 }
 
-void delay_us(uint32_t us, void *intf_ptr)
-{
+void delay_us(uint32_t us, void *intf_ptr) {
     delayMicroseconds(us);
 }
 
@@ -81,7 +80,7 @@ void setup() {
     M5.Lcd.setCursor(0, 0);
     M5.Lcd.println("BME688 Sensor Data");
 
-    uint8_t dev_addr = BME68X_I2C_ADDR_HIGH;
+    uint8_t dev_addr = DEVICE_ADDRESS;
     bme.intf = BME68X_I2C_INTF;
     bme.read = i2c_read;
     bme.write = i2c_write;
